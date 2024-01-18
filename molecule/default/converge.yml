@@ -1,0 +1,5 @@
+---
+- name: "Include labocbz.deploy_nextcloud playbook"
+  tags:
+      - "labocbz.deploy_nextcloud"
+  ansible.builtin.import_playbook: "../../playbook.yml"
