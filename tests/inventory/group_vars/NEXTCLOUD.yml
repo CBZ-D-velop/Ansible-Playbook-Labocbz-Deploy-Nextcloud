@@ -32,3 +32,5 @@ inv_install_nextcloud_trusted_domains: "http://my.nextcloud.domain.tld 127.0.0.1
 inv_install_nextcloud_overwritehost: "http://my.nextcloud.domain.tld"
 inv_install_nextcloud_owerwriteprotocol: "http"
 inv_install_nextcloud_owerwritecliurl: "{{ inv_install_nextcloud_overwritehost }}"
+
+#inv_nextcloud_cert_bundles:
