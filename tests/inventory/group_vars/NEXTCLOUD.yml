@@ -1,5 +1,5 @@
-
 ---
+
 inv_install_nextcloud: true
 
 inv_install_nextcloud_install_path: "/var/www/html/my-nextcloud-server.domain.tld"
@@ -34,7 +34,6 @@ inv_install_nextcloud_redis_password: "ocomj487bj5b"
 #inv_install_nextcloud_instanceid: "ocomj487bj5b"
 #inv_install_nextcloud_passwordsalt: "PswA+Tk6fEPn6ae0wXtxEhapv2f8ti"
 #inv_install_nextcloud_secret: "KqazwWa7/nkjXMAkgMlPQv1T+tp0oDLvfytrLC6VWtQYn+Um"
-
 
 inv_install_nextcloud_trusted_proxies:
   - "127.0.0.1"
