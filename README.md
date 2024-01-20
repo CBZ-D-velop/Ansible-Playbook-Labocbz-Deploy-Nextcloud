@@ -16,6 +16,8 @@
 ![Tag: Nexcloud](https://img.shields.io/badge/Tech-Nexcloud-orange)
 ![Tag: SSL/TLS](https://img.shields.io/badge/Tech-SSL%2FTLS-orange)
 ![Tag: Apache2](https://img.shields.io/badge/Tech-Apache2-orange)
+![Tag: PHP](https://img.shields.io/badge/Tech-PHP-orange)
+![Tag: PHP-FPM](https://img.shields.io/badge/Tech-PHP--FPM-orange)
 
 An Ansible playbook to deploy and configure a Nexcloud server on your hosts.
 

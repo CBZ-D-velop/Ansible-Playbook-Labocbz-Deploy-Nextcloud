@@ -13,7 +13,6 @@ platforms:
     command: "/sbin/init"
     published_ports:
       - "0.0.0.0:80:80/tcp"
-      - "0.0.0.0:8080:8080/tcp"
       - "0.0.0.0:443:443/tcp"
     dockerfile: "Dockerfile"
     privileged: true

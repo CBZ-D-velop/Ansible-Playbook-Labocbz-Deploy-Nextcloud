@@ -1,5 +1,5 @@
 ---
-- name: "Deploy Docker and Nextcloud"
+- name: "Deploy Docker"
   hosts: "{{ tower_env | default([]) }}"
   gather_facts: true
   become: true
@@ -66,61 +66,14 @@
           ansible.builtin.include_role:
             name: "labocbz.install_docker"
 
-    - name: "Install Nextcloud"
-      when: inv_install_nextcloud | default(false)
-      block:
-        - name: "Include labocbz.add_certificates"
-          tags:
-            - "labocbz.add_certificates"
-          loop: "{{ inv_nextcloud_cert_bundles }}"
-          loop_control:
-            loop_var: bundle
-          when: inv_nextcloud_cert_bundles is defined
-          vars:
-            add_certificates_bundle_name: "{{ bundle.name }}"
-            add_certificates_bundle_type: "{{ bundle.type }}"
-            add_certificates_bundle_src: "{{ bundle.src }}"
-            add_certificates_bundle_dest: "{{ bundle.dest }}"
-            add_certificates_bundle_src_user: "{{ bundle.src_user }}"
-            add_certificates_bundle_src_password: "{{ bundle.src_password }}"
-            add_certificates_bundle_dest_user: "{{ bundle.dest_user }}"
-            add_certificates_bundle_dest_group: "{{ bundle.dest_group }}"
-            add_certificates_bundle_dest_mode: "{{ bundle.dest_mode }}"
-          ansible.builtin.include_role:
-            name: "labocbz.add_certificates"
+- name: "Deploy Apache2, PHP, PHP-FPM and Nextcloud"
+  hosts: "{{ tower_env | default([]) }}"
+  gather_facts: true
+  become: true
+  become_method: sudo
+  become_user: root
 
-      - name: "Include labocbz.install_nextcloud"
-        tags:
-          - "labocbz.install_nextcloud"
-        vars:
-          install_nextcloud_container_name: "{{ inv_install_nextcloud_container_name }}"
-          install_nextcloud_data_path: "{{ inv_install_nextcloud_data_path }}"
-          install_nextcloud_web_address: "{{ inv_install_nextcloud_web_address }}"
-          install_nextcloud_web_port: "{{ inv_install_nextcloud_web_port }}"
-          install_nextcloud_mysql_database: "{{ inv_install_nextcloud_mysql_database }}"
-          install_nextcloud_mysql_user: "{{ inv_install_nextcloud_mysql_user }}"
-          install_nextcloud_mysql_password: "{{ inv_install_nextcloud_mysql_password }}"
-          install_nextcloud_mysql_host: "{{ inv_install_nextcloud_mysql_host }}"
-          install_nextcloud_mysql_attr_ssl_key: "{{ inv_install_nextcloud_mysql_attr_ssl_key }}"
-          install_nextcloud_mysql_attr_ssl_cert: "{{ inv_install_nextcloud_mysql_attr_ssl_cert }}"
-          install_nextcloud_mysql_attr_ssl_ca: "{{ inv_install_nextcloud_mysql_attr_ssl_ca }}"
-          install_nextcloud_mysql_attr_ssl_verify_server_cert: "{{ inv_install_nextcloud_mysql_attr_ssl_verify_server_cert }}"
-          install_nextcloud_admin_user: "{{ inv_install_nextcloud_admin_user }}"
-          install_nextcloud_admin_password: "{{ inv_install_nextcloud_admin_password }}"
-          install_nextcloud_redis_host: "{{ inv_install_nextcloud_redis_host }}"
-          install_nextcloud_redis_host_port: "{{ inv_install_nextcloud_redis_host_port }}"
-          install_nextcloud_redis_host_password: "{{ inv_install_nextcloud_redis_host_password }}"
-          install_nextcloud_php_memory_limit: "{{ inv_install_nextcloud_php_memory_limit }}"
-          install_nextcloud_php_upload_limit: "{{ inv_install_nextcloud_php_upload_limit }}"
-          install_nextcloud_apache_disable_rewrite_ip: "{{ inv_install_nextcloud_apache_disable_rewrite_ip }}"
-          install_nextcloud_trusted_proxies: "{{ inv_install_nextcloud_trusted_proxies }}"
-          install_nextcloud_trusted_domains: "{{ inv_install_nextcloud_trusted_domains }}"
-          install_nextcloud_overwritehost: "{{ inv_install_nextcloud_overwritehost }}"
-          install_nextcloud_owerwriteprotocol: "{{ inv_install_nextcloud_owerwriteprotocol }}"
-          install_nextcloud_owerwritecliurl: "{{ inv_install_nextcloud_owerwritecliurl }}"
-        ansible.builtin.include_role:
-          name: "labocbz.install_nextcloud"
-
+  tasks:
     - name: "Install Apache2"
       when: inv_install_apache | default(false)
       block:
@@ -171,6 +124,15 @@
           ansible.builtin.include_role:
             name: "labocbz.install_apache"
 
+        - name: "Import playbook custom template for Apache2"
+          delegate_to: localhost
+          run_once: true
+          become: false
+          ansible.builtin.copy:
+            src: "templates/nextcloud.j2"
+            dest: "./roles/labocbz.add_apache_confs/templates/customs/nextcloud.j2"
+            mode: "0700"
+
         - name: "Include labocbz.add_apache_confs"
           tags:
             - "labocbz.add_apache_confs"
@@ -200,11 +162,117 @@
           ansible.builtin.include_role:
             name: "labocbz.add_logrotate_confs"
 
-        - name: "Block all trafic from other hosts on port Nextcloud HTTP (disable acces to Nextcloud without Apache2)"
-          ansible.builtin.iptables:
-            chain: "INPUT"
-            protocol: "tcp"
-            destination_port: "{{ inv_install_nextcloud_web_port }}"
-            jump: "DROP"
-            source: "! 127.0.0.1"
-            comment: "Force external user to use Apache2"
+    - name: "Install PHP and PHP-FPM"
+      when: inv_install_php | default(false)
+      block:
+        - name: "Include labocbz.install_php"
+          tags:
+            - "labocbz.install_php"
+          vars:
+            install_php_version: "{{ inv_install_php_version }}"
+            install_php_version_is_default: "{{ inv_install_php_version_is_default }}"
+            install_php_extensions: "{{ inv_install_php_extensions }}"
+            install_php_install_fpm: "{{ inv_install_php_install_fpm }}"
+            install_php_import_cli_conf: "{{ inv_install_php_import_cli_conf }}"
+            install_php_import_apache_conf: "{{ inv_install_php_import_apache_conf }}"
+            install_php_import_cgi_conf: "{{ inv_install_php_import_cgi_conf }}"
+            install_php_import_fpm_conf: "{{ inv_install_php_import_fpm_conf }}"
+            install_php_max_input_time: "{{ inv_install_php_max_input_time }}"
+            install_php_output_buffering: "{{ inv_install_php_output_buffering }}"
+            install_php_cgi_fix_pathinfo: "{{ inv_install_php_cgi_fix_pathinfo }}"
+            install_php_expose_php: "{{ inv_install_php_expose_php }}"
+            install_php_max_execution_time: "{{ inv_install_php_max_execution_time }}"
+            install_php_memory_limit: "{{ inv_install_php_memory_limit }}"
+            install_php_post_max_size: "{{ inv_install_php_post_max_size }}"
+            install_php_file_uploads: "{{ inv_install_php_file_uploads }}"
+            install_php_upload_max_filesize: "{{ inv_install_php_upload_max_filesize }}"
+            install_php_max_file_uploads: "{{ inv_install_php_max_file_uploads }}"
+            install_php_allow_url_fopen: "{{ inv_install_php_allow_url_fopen }}"
+            install_php_allow_url_include: "{{ inv_install_php_allow_url_include }}"
+            install_php_session_save_handler: "{{ inv_install_php_session_save_handler }}"
+            install_php_session_save_path: "{{ inv_install_php_session_save_path }}"
+            install_php_session_auto_start: "{{ inv_install_php_session_auto_start }}"
+            install_php_session_use_strict_mode: "{{ inv_install_php_session_use_strict_mode }}"
+            install_php_disable_functions: "{{ inv_install_php_disable_functions }}"
+            install_php_remove_all_fpm_pools: "{{ inv_install_php_remove_all_fpm_pools }}"
+            install_php_fpm_pools_path: "{{ inv_install_php_fpm_pools_path }}"
+            install_php_interned_strings_buffer: "{{ inv_install_php_interned_strings_buffer }}"
+            install_php_interned_strings_memory_consumption: "{{ inv_install_php_interned_strings_memory_consumption }}"
+          ansible.builtin.include_role:
+            name: "labocbz.install_php"
+
+        - name: "Include labocbz.add_php_fpm_confs"
+          tags:
+            - "labocbz.add_php_fpm_confs"
+          vars:
+            add_php_fpm_confs_php_version: "{{ inv_add_php_fpm_confs_php_version }}"
+            add_php_fpm_confs_php_pools_path: "{{ inv_add_php_fpm_confs_php_pools_path }}"
+            add_php_fpm_confs_fpm_pools: "{{ inv_add_php_fpm_confs_fpm_pools }}"
+          ansible.builtin.include_role:
+            name: "labocbz.add_php_fpm_confs"
+
+        - name: "Force load proxy_fcgi"
+          register: output
+          changed_when: output.rc != 0
+          ansible.builtin.shell: >
+            a2enmod proxy_fcgi && systemctl restart apache2
+
+    - name: "Install Nextcloud"
+      when: inv_install_nextcloud | default(false)
+      block:
+        - name: "Include labocbz.add_certificates"
+          tags:
+            - "labocbz.add_certificates"
+          loop: "{{ inv_nextcloud_cert_bundles }}"
+          loop_control:
+            loop_var: bundle
+          when: inv_nextcloud_cert_bundles is defined
+          vars:
+            add_certificates_bundle_name: "{{ bundle.name }}"
+            add_certificates_bundle_type: "{{ bundle.type }}"
+            add_certificates_bundle_src: "{{ bundle.src }}"
+            add_certificates_bundle_dest: "{{ bundle.dest }}"
+            add_certificates_bundle_src_user: "{{ bundle.src_user }}"
+            add_certificates_bundle_src_password: "{{ bundle.src_password }}"
+            add_certificates_bundle_dest_user: "{{ bundle.dest_user }}"
+            add_certificates_bundle_dest_group: "{{ bundle.dest_group }}"
+            add_certificates_bundle_dest_mode: "{{ bundle.dest_mode }}"
+          ansible.builtin.include_role:
+            name: "labocbz.add_certificates"
+
+        - name: "Include labocbz.install_nextcloud"
+          tags:
+            - "labocbz.install_nextcloud"
+          vars:
+            install_nextcloud_install_path: "{{ inv_install_nextcloud_install_path }}"
+            install_nextcloud_install_data_path: "{{ inv_install_nextcloud_install_data_path }}"
+            install_nextcloud_apache_system_user: "{{ inv_install_nextcloud_apache_system_user }}"
+            install_nextcloud_apache_system_group: "{{ inv_install_nextcloud_apache_system_group }}"
+            install_nextcloud_version: "{{ inv_install_nextcloud_version }}"
+            install_nextcloud_default_locale: "{{ inv_install_nextcloud_default_locale }}"
+            install_nextcloud_default_phone_region: "{{ inv_install_nextcloud_default_phone_region }}"
+            install_nextcloud_default_timezone: "{{ inv_install_nextcloud_default_timezone }}"
+            install_nextcloud_loglevel: "{{ inv_install_nextcloud_loglevel }}"
+            install_nextcloud_debug: "{{ inv_install_nextcloud_debug }}"
+            install_nextcloud_mysql_database: "{{ inv_install_nextcloud_mysql_database }}"
+            install_nextcloud_mysql_user: "{{ inv_install_nextcloud_mysql_user }}"
+            install_nextcloud_mysql_password: "{{ inv_install_nextcloud_mysql_password }}"
+            install_nextcloud_mysql_host: "{{ inv_install_nextcloud_mysql_host }}"
+            install_nextcloud_mysql_port: "{{ inv_install_nextcloud_mysql_port }}"
+            install_nextcloud_mysql_attr_ssl_key: "{{ inv_install_nextcloud_mysql_attr_ssl_key }}"
+            install_nextcloud_mysql_attr_ssl_crt: "{{ inv_install_nextcloud_mysql_attr_ssl_crt }}"
+            install_nextcloud_mysql_attr_ssl_ca: "{{ inv_install_nextcloud_mysql_attr_ssl_ca }}"
+            install_nextcloud_mysql_attr_ssl_verify_server_cert: "{{ inv_install_nextcloud_mysql_attr_ssl_verify_server_cert }}"
+            install_nextcloud_redis_host: "{{ inv_install_nextcloud_redis_host }}"
+            install_nextcloud_redis_password: "{{ inv_install_nextcloud_redis_password }}"
+            install_nextcloud_trusted_proxies: "{{ inv_install_nextcloud_trusted_proxies }}"
+            install_nextcloud_trusted_domains: "{{ inv_install_nextcloud_trusted_domains }}"
+            install_nextcloud_overwritehost: "{{ inv_install_nextcloud_overwritehost }}"
+            install_nextcloud_owerwriteprotocol: "{{ inv_install_nextcloud_owerwriteprotocol }}"
+            install_nextcloud_owerwritecliurl: "{{ inv_install_nextcloud_owerwritecliurl }}"
+            #
+            install_nextcloud_instanceid: "{{ inv_install_nextcloud_instanceid }}"
+            install_nextcloud_passwordsalt: "{{ inv_install_nextcloud_passwordsalt }}"
+            install_nextcloud_secret: "{{ inv_install_nextcloud_secret }}"
+          ansible.builtin.include_role:
+            name: "labocbz.install_nextcloud"
