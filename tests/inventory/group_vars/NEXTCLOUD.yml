@@ -1,5 +1,4 @@
 ---
-
 inv_install_nextcloud: true
 
 inv_install_nextcloud_install_path: "/var/www/html/my-nextcloud-server.domain.tld"
@@ -15,6 +14,9 @@ inv_install_nextcloud_default_timezone: "Europe/Berlin"
 inv_install_nextcloud_loglevel: "0"
 inv_install_nextcloud_debug: "true"
 
+inv_install_nextcloud_admin_user: "nextcloud"
+inv_install_nextcloud_admin_password: "nextcloud"
+
 inv_install_nextcloud_mysql_database: "nextcloud"
 inv_install_nextcloud_mysql_user: "nextcloud"
 inv_install_nextcloud_mysql_password: "ocomj487bj5b"
@@ -26,14 +28,16 @@ inv_install_nextcloud_mysql_attr_ssl_crt: "/var/www/html/my-nextcloud-server.dom
 inv_install_nextcloud_mysql_attr_ssl_ca: "/var/www/html/my-nextcloud-server.domain.tld/ssl/my-nextcloud-server.domain.tld/ca-chain.pem.crt"
 inv_install_nextcloud_mysql_attr_ssl_verify_server_cert: "true"
 
-inv_install_nextcloud_redis_host: "{{ inventory_hostname }}"
+inv_install_nextcloud_redis_host: "127.0.0.1"
 inv_install_nextcloud_redis_port: "6379"
 inv_install_nextcloud_redis_password: "ocomj487bj5b"
 
 # AFTER INSTALL IF MODIFICATIONS ARE NEEDED
-#inv_install_nextcloud_instanceid: "ocomj487bj5b"
-#inv_install_nextcloud_passwordsalt: "PswA+Tk6fEPn6ae0wXtxEhapv2f8ti"
-#inv_install_nextcloud_secret: "KqazwWa7/nkjXMAkgMlPQv1T+tp0oDLvfytrLC6VWtQYn+Um"
+#inv_install_nextcloud_instanceid: "ocrxwfyhv7ti"
+#inv_install_nextcloud_passwordsalt: "6iQBL9eRly9Mf+dhK1WUT80CVo+tJd"
+#inv_install_nextcloud_secret: "y/8CCjRqJKLORuivu393EoFORvaVGNm1rY58VEYR6ZILc55I"
+
+inv_install_nextcloud_clean_cron_file: "ansible_nextcloud_cron_job"
 
 inv_install_nextcloud_trusted_proxies:
   - "127.0.0.1"
@@ -45,26 +49,3 @@ inv_install_nextcloud_trusted_domains:
 inv_install_nextcloud_overwritehost: "localhost"
 inv_install_nextcloud_owerwriteprotocol: "https"
 inv_install_nextcloud_owerwritecliurl: "{{ inv_install_nextcloud_owerwriteprotocol }}://{{ inv_install_nextcloud_overwritehost }}"
-
-inv_nextcloud_cert_bundles:
-  - name: "My-Local-Ansible-Root-CA.pem.crt"
-    type: "CA"
-    src: "/tmp/My-Local-Ansible-Root-CA.pem.crt"
-
-  - name: "My-Local-Ansible-Intermediate-CA-1.pem.crt"
-    type: "CA"
-    src: "/tmp/My-Local-Ansible-Intermediate-CA-1.pem.crt"
-
-  - name: "My-Local-Ansible-Intermediate-CA-2.pem.crt"
-    type: "CA"
-    src: "/tmp/My-Local-Ansible-Intermediate-CA-2.pem.crt"
-
-  - name: "my-mariadb-server.domain.tld"
-    type: "cert"
-    src: "/tmp/my-mariadb-server.domain.tld.zip"
-    dest: "/var/www/html/my-nextcloud-server.domain.tld/ssl"
-    #src_user: "myUser"
-    #src_password: "secretPassword"
-    dest_user: "www-data"
-    dest_group: "www-data"
-    dest_mode: "0700"

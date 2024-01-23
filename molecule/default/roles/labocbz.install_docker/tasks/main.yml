@@ -1,0 +1,163 @@
+---
+- name: "Add custom / insecure registries"
+  when: install_docker_insecure_registries | default(false)
+  notify: "Restart Docker"
+  block:
+      - name: "Check if /etc/docker exist"
+        register: install_docker_folder
+        ansible.builtin.stat:
+          path: "/etc/docker"
+
+      - name: "Create /etc/docker directory"
+        when: not install_docker_folder.stat.exists
+        ansible.builtin.file:
+          path: "/etc/docker"
+          state: directory
+          mode: "0600"
+
+      - name: "Import custom dameon.json conf"
+        ansible.builtin.template:
+          src: "templates/daemon.json.j2"
+          dest: "/etc/docker/daemon.json"
+          mode: "0600"
+
+- name: "Install Docker"
+  notify: "Enable and start Docker"
+  block:
+  - name: "Add Docker GPG apt Key"
+    ansible.builtin.apt_key:
+      url: "https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg"
+
+  - name: "Add Docker Repository"
+    ansible.builtin.apt_repository:
+      repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_os_family | lower }} {{ ansible_distribution_release | lower }} stable"
+
+  - name: "Update apt and install docker-ce"
+    ansible.builtin.apt:
+      update_cache: true
+      name:
+        - "docker-ce"
+
+- name: "Install Docker-Compose"
+  ansible.builtin.get_url:
+    url: "https://github.com/docker/compose/releases/download/v{{ install_docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_machine }}"
+    dest: "/usr/local/bin/docker-compose"
+    mode: 'a+x'
+
+- name: "Install Portainer (no SSL)"
+  when: (install_docker_portainer | default(false)) and not (install_docker_portainer_ssl | default(false))
+  community.docker.docker_container:
+    name: "{{ install_docker_portainer_container_name }}"
+    image: "portainer/portainer-ce"
+    state: "present"
+    recreate: false
+    restart_policy: "always"
+    ports:
+      - "{{ install_docker_portainer_address }}:{{ install_docker_portainer_http_port }}:9000"
+      - "{{ install_docker_portainer_address }}:{{ install_docker_portainer_https_port }}:9443"
+      - "0.0.0.0:8000:8000"
+    volumes:
+      - "{{ install_docker_portainer_volume_name }}:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+- name: "Install Portainer (SSL)"
+  when: (install_docker_portainer | default(false)) and (install_docker_portainer_ssl | default(false))
+  community.docker.docker_container:
+    name: "{{ install_docker_portainer_container_name }}"
+    image: "portainer/portainer-ce"
+    state: "started"
+    recreate: false
+    restart_policy: "always"
+    ports:
+      - "{{ install_docker_portainer_address }}:{{ install_docker_portainer_http_port }}:9000"
+      - "{{ install_docker_portainer_address }}:{{ install_docker_portainer_https_port }}:9443"
+      - "0.0.0.0:8000:8000"
+    volumes:
+      - "{{ install_docker_portainer_volume_name }}:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "{{ install_docker_portainer_ssl_path }}:/certs"
+    env:
+      sslcert: "{{ install_docker_portainer_ssl_cert }}"
+      sslkey: "{{ install_docker_portainer_ssl_key }}"
+
+- name: "Install Watchtower"
+  when: install_docker_watchtower | default(false)
+  community.docker.docker_container:
+    name: "{{ install_docker_watchtower_container_name }}"
+    image: "containrrr/watchtower"
+    state: "started"
+    recreate: false
+    restart_policy: "always"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    env:
+      WATCHTOWER_POLL_INTERVAL: "{{ install_docker_watchtower_poll_interval }}"
+      WATCHTOWER_CLEANUP: "{{ install_docker_watchtower_cleanup }}"
+      WATCHTOWER_INCLUDE_RESTARTING: "{{ install_docker_watchtower_include_restarting }}"
+      WATCHTOWER_INCLUDE_STOPPED: "{{ install_docker_watchtower_include_stopped }}"
+      WATCHTOWER_NO_RESTART: "{{ install_docker_watchtower_no_restart }}"
+
+- name: "Handler Docker clean"
+  when: install_docker_handle_clean | default(false)
+  block:
+    - name: "Set facts for cleaning job"
+      ansible.builtin.set_fact:
+        var_handle_docker_clean_cron_file: "{{ handle_docker_clean_cron_file | default('ansible_docker_system_prune') }}"
+        var_handle_docker_clean_weekday: "{{ handle_docker_clean_weekday | default('*') }}"
+        var_handle_docker_clean_minute: "{{ handle_docker_clean_minute | default('0') }}"
+        var_handle_docker_clean_hour: "{{ handle_docker_clean_hour | default('*/6') }}"
+
+    - name: "Create a cron file under /etc/cron.d"
+      ansible.builtin.cron:
+        cron_file: "{{ var_handle_docker_clean_cron_file }}"
+        name: "Docker System Prune"
+        weekday: "{{ var_handle_docker_clean_weekday }}"
+        minute: "{{ var_handle_docker_clean_minute }}"
+        hour: "{{ var_handle_docker_clean_hour }}"
+        user: "root"
+        job: "docker system prune --all --volumes --force && docker volume prune --all --force > /dev/null 2>&1"
+        state: present
+
+- name: "Handler Docker No clean"
+  when: not (install_docker_handle_clean | default(false))
+  block:
+    - name: "Set facts for cleaning job"
+      ansible.builtin.set_fact:
+        var_handle_docker_clean_cron_file: "{{ handle_docker_clean_cron_file | default('ansible_docker_system_prune') }}"
+
+    - name: "Remove a cron file under /etc/cron.d"
+      ansible.builtin.cron:
+        cron_file: "{{ var_handle_docker_clean_cron_file }}"
+        name: "Docker System Prune"
+        state: absent
+
+- name: "Disable SWAP and add cron"
+  when: install_docker_disable_swap | default(true)
+  block:
+    - name: "Disable SWAP"
+      register: ouput
+      changed_when: ouput.rc != 0
+      ignore_errors: true
+      ansible.builtin.command: "swapoff -a"
+
+    - name: "Create cron task for SWAP disabling"
+      ansible.builtin.cron:
+        name: "Disable SWAP at boot"
+        special_time: "reboot"
+        user: "root"
+        job: "swapoff -a"
+        cron_file: "ansible_disable_swap_after_boot"
+
+- name: "Enable SWAP and remove cron"
+  when: not (install_docker_disable_swap | default(true))
+  block:
+    - name: "Enable SWAP"
+      register: ouput
+      changed_when: ouput.rc != 0
+      ansible.builtin.command: "swapon -a"
+
+    - name: "Remove cron task for SWAP disabling"
+      ansible.builtin.cron:
+        cron_file: "ansible_disable_swap_after_boot"
+        name: "Disable SWAP at boot"
+        state: absent
