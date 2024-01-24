@@ -39,6 +39,13 @@ inv_install_nextcloud_redis_password: "ocomj487bj5b"
 
 inv_install_nextcloud_clean_cron_file: "ansible_nextcloud_cron_job"
 
+inv_install_nextcloud_mail_from_address: "my.nextcloud" #@my.domain.tld
+inv_install_nextcloud_mail_smtpmode: "smtp"
+inv_install_nextcloud_mail_sendmailmode: "smtp"
+inv_install_nextcloud_mail_domain: "my.domain.tld"
+inv_install_nextcloud_mail_smtphost: "127.0.0.1"
+inv_install_nextcloud_mail_smtpport: 25
+
 inv_install_nextcloud_trusted_proxies:
   - "127.0.0.1"
   - "localhost"
