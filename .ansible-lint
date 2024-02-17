@@ -48,10 +48,7 @@ use_default_rules: true
 skip_list:
   - skip_this_tag
   - latest[git]
-  #- yaml[line-length]
-  - yaml
-  - role-name[path]
-  - name[template]*
+  #- yaml[line-length]*
   - var-naming[no-role-prefix]
 
 # Ansible-lint does not automatically load rules that have the 'opt-in' tag.
