@@ -14,7 +14,6 @@ exclude_paths:
   - test/schemas/
   - .yamllint
   - .ansible-lint
-  - tests/
 # parseable: true
 # quiet: true
 # strict: true
@@ -48,8 +47,7 @@ use_default_rules: true
 skip_list:
   - skip_this_tag
   - latest[git]
-  #- yaml[line-length]*
-  - var-naming[no-role-prefix]
+  #- yaml[line-length]
 
 # Ansible-lint does not automatically load rules that have the 'opt-in' tag.
 # You must enable opt-in rules by listing each rule 'id' below.
