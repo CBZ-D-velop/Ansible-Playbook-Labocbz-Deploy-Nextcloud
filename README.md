@@ -121,6 +121,14 @@ Here you can put your change to keep a trace of your work and decisions.
 
 * First init of this playbook with the bootstrap_playbook playbook by Lord Robin Crombez
 
+### 2024-03-07: Refacto
+
+* Refacto on the roles
+* tested and validated on Debian 11/12 and Ubuntu 22
+* Install of the main system handled
+* Data storage not handled (Redis/Mariadb)
+* Database population handled
+
 ## Authors
 
 * Lord Robin Crombez
@@ -129,3 +137,8 @@ Here you can put your change to keep a trace of your work and decisions.
 
 * [Ansible playbook documentation](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_reuse_playbooks.html)
 * [Ansible Molecule documentation](https://molecule.readthedocs.io/)
+* [Ansible-Role-Labocbz-Install-Nextcloud](https://gitlab.com/cbz-d-velop/public-ansible/ansible-role-labocbz-install-nextcloud)
+* [Ansible-Role-Labocbz-Install-PHP](https://gitlab.com/cbz-d-velop/public-ansible/ansible-role-labocbz-install-php)
+* [Ansible-Role-Labocbz-Add-PHP-FPM-Confs](https://gitlab.com/cbz-d-velop/public-ansible/ansible-role-labocbz-add-php-fpm-confs)
+* [Ansible-Role-Labocbz-Install-Apache](https://gitlab.com/cbz-d-velop/public-ansible/ansible-role-labocbz-install-apache)
+* [Ansible-Role-Labocbz-Add-Apache-Confs](https://gitlab.com/cbz-d-velop/public-ansible/ansible-role-labocbz-add-apache-confs)
