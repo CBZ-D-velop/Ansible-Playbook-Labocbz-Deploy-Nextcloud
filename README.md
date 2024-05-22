@@ -56,7 +56,6 @@ Overall, this deployment architecture offers a comprehensive and secure solution
 You have to run multiples tests. *tests with an # are mandatory*
 
 ```MARKDOWN
-# lint
 # syntax
 # converge
 # idempotence
@@ -81,7 +80,6 @@ yamllint -c ./.yamllint .
 ansible-lint --config=./.ansible-lint .
 
 # Execute and test your playbook
-molecule lint
 molecule create
 molecule list
 molecule converge
@@ -128,6 +126,14 @@ Here you can put your change to keep a trace of your work and decisions.
 * Install of the main system handled
 * Data storage not handled (Redis/Mariadb)
 * Database population handled
+
+### 2024-05-19: New CI
+
+* Added Markdown lint to the CICD
+* Rework all Docker images
+* Change CICD vars convention
+* New workers
+* Removed all automation based on branch
 
 ## Authors
 
